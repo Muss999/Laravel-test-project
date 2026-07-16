@@ -3,19 +3,21 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Number;
+use App\Services\NumberService;
 
-class GenerateNumber extends Command
-{
+class GenerateNumber extends Command {
+    private NumberService $numberService;
     protected $signature = 'number:generate';
-
     protected $description = 'Generate random number';
 
-    public function handle()
-    {
-        Number::create([
-            'value' => random_int(1, 100),
-        ]);
+    public function __construct(NumberService $numberService) {
+        parent::__construct();
+
+        $this->numberService = $numberService;
+    }
+
+    public function handle() {
+        $this->numberService->generateNumber();
 
         return Command::SUCCESS;
     }

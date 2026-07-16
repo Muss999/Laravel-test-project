@@ -2,55 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use App\Services\UserService;
 
-class UserController extends Controller
-{
-    public function register(Request $request)
-{
-    $user = User::create([
-        "name" => $request->name,
-        "email" => $request->email,
-        "password" => Hash::make($request->password),
+class UserController extends Controller {
+  private UserService $userService;
+
+  public function __construct(UserService $userService) {
+    $this->userService = $userService;
+  }
+
+  public function register(Request $request) {
+    $data = $request->validate([
+      "name"=>"required",
+      "email"=>"required|email",
+      "password"=>"required"
     ]);
+
+    $user = $this->userService->register($data);
 
     return response()->json([
-        "user" => $user
+      "user"=>$user
     ]);
-}
+  }
+  
+  public function login(Request $request){
+    $credentials = $request->validate([
+      "email" => "required|email",
+      "password" => "required"
+    ]);
 
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+    $data = $this->userService->login($credentials);
 
-
-        if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+    if(!$data) {
+      return response()->json([
+        "message" => "Invalid data!"
+      ], 401);
     }
 
-    public function profile(Request $request)
-    {
-        return response()->json(
-            $request->user()
-        );
-    }
+    return response()->json([
+      "user" => $data["user"],
+      "token" => $data["token"]
+    ]);
+  }
+    
+  public function profile(Request $request) {
+    return response()->json(
+      $request->user()
+    );
+  }
 }
